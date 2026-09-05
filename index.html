@@ -428,8 +428,8 @@
         <p class="section-sub">Bagian ini membantu kami memahami latar belakang responden.</p>
 
         <div class="field">
-          <label class="q-label">Nama (opsional)</label>
-          <input type="text" name="nama" placeholder="Nama Anda">
+          <label class="q-label">Nama</label>
+          <input type="text" name="nama" placeholder="Nama Anda" required>
         </div>
 
         <div class="field">
@@ -517,6 +517,12 @@
 </div>
 
 <script>
+document.getElementById('surveyForm').addEventListener('submit', async (e)=>{
+  e.preventDefault(); // <-- Ini berfungsi mencegah reload dan menangani submit
+  if(!currentStepValid()){
+    document.getElementById('formNotice').classList.add('show');
+    return;
+  }
 /* ====== GANTI URL INI setelah deploy Google Apps Script (lihat panduan) ====== */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHrmfqVjj4NZF2RfEZDKlAKtYy7Alf324EPKHJ1rtnr3D4Q_WZhP-_uYq3bK4R-2tioQ/exec";
 /* ============================================================================ */
