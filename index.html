@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Survei Persepsi Kebermanfaatan — Neural Association Rule Mining</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F7F5F0;
+    --panel: #FFFFFF;
+    --ink: #1E2421;
+    --ink-soft: #565F5B;
+    --line: #DDD9CE;
+    --teal: #0F5257;
+    --teal-deep: #0A3A3D;
+    --amber: #C98A3B;
+    --error: #B54834;
+    --radius: 10px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Inter', system-ui, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  header.top{
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+  }
+  header.top .kicker{
+    font-size: 13px;
+    color: var(--teal);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    margin-bottom: 10px;
+  }
+  header.top h1{
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 700;
+    font-size: clamp(24px, 4vw, 30px);
+    line-height: 1.25;
+    margin: 0 0 10px;
+    color: var(--teal-deep);
+  }
+  header.top p{
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    max-width: 56ch;
+    margin: 0;
+  }
+
+  /* progress */
+  .progress{
+    display:flex;
+    gap: 6px;
+    margin: 22px 0 6px;
+  }
+  .progress .seg{
+    flex:1;
+    height: 4px;
+    border-radius: 3px;
+    background: var(--line);
+    overflow:hidden;
+  }
+  .progress .seg.done{ background: var(--teal); }
+  .progress-label{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px 26px;
+  }
+  .step{ display:none; }
+  .step.active{ display:block; animation: rise .25s ease; }
+  @keyframes rise{ from{ opacity:0; transform: translateY(6px);} to{opacity:1; transform:none;} }
+
+  h2.section-title{
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--teal-deep);
+  }
+  .section-sub{
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    margin: 0 0 22px;
+  }
+
+  .field{ margin-bottom: 20px; }
+  .field label.q-label{
+    display:block;
+    font-size: 14.5px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  input[type="text"], select{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-size: 14.5px;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+  }
+  input[type="text"]:focus, select:focus, textarea:focus{
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+    border-color: var(--teal);
+  }
+  textarea{
+    width:100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    font-size: 14.5px;
+    font-family: inherit;
+    min-height: 84px;
+    resize: vertical;
+    color: var(--ink);
+  }
+  .checkbox-group, .radio-inline-group{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 8px;
+  }
+  .chip{
+    position: relative;
+  }
+  .chip input{ position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; }
+  .chip span{
+    display:inline-block;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    background:#fff;
+  }
+  .chip input:checked + span{
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #fff;
+  }
+  .chip input:focus-visible + span{
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
+  /* likert */
+  .likert-item{
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .likert-item:last-child{ border-bottom: none; }
+  .likert-num{
+    font-family: 'Source Serif 4', Georgia, serif;
+    color: var(--amber);
+    font-size: 13px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .likert-text{
+    font-size: 14.5px;
+    margin-bottom: 12px;
+  }
+  .likert-scale{
+    display:flex;
+    justify-content: space-between;
+    align-items:flex-start;
+    gap: 4px;
+  }
+  .likert-scale .end-label{
+    font-size: 11px;
+    color: var(--ink-soft);
+    max-width: 78px;
+    line-height: 1.3;
+  }
+  .likert-scale .end-label.right{ text-align:right; }
+  .likert-opts{
+    display:flex;
+    gap: 8px;
+  }
+  .likert-opt{ position:relative; }
+  .likert-opt input{
+    position:absolute; opacity:0; width:38px; height:38px; margin:0; cursor:pointer;
+  }
+  .likert-opt span{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line);
+    font-size: 14px;
+    color: var(--ink-soft);
+    background:#fff;
+  }
+  .likert-opt input:checked + span{
+    background: var(--teal-deep);
+    border-color: var(--teal-deep);
+    color:#fff;
+  }
+  .likert-opt input:focus-visible + span{
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+
+  .nav-row{
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    margin-top: 26px;
+  }
+  button{
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 500;
+    padding: 11px 22px;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+  }
+  .btn-primary{ background: var(--teal-deep); color: #fff; }
+  .btn-primary:hover{ background: var(--teal); }
+  .btn-ghost{ background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  .btn-ghost:hover{ border-color: var(--ink-soft); color: var(--ink); }
+  button:disabled{ opacity: .5; cursor: not-allowed; }
+
+  .notice{
+    font-size: 13px;
+    color: var(--error);
+    margin-top: 10px;
+    display:none;
+  }
+  .notice.show{ display:block; }
+
+  .done-panel{ text-align:center; padding: 46px 26px; }
+  .done-panel h2{
+    font-family:'Source Serif 4', Georgia, serif;
+    color: var(--teal-deep);
+    font-size: 22px;
+  }
+  .done-panel p{ color: var(--ink-soft); font-size: 14.5px; }
+
+  .sending-note{
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-top: 12px;
+    display:none;
+  }
+  .sending-note.show{ display:block; }
+
+  @media (max-width: 520px){
+    .likert-scale .end-label{ display:none; }
+    .panel{ padding: 22px 16px; }
+  }
+
+  /* research summary intro */
+  .summary-block{ margin-bottom: 22px; }
+  .summary-block h3{
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--teal-deep);
+    margin: 0 0 6px;
+  }
+  .summary-block p, .summary-block li{
+    font-size: 13.5px;
+    color: var(--ink);
+    margin: 0 0 8px;
+  }
+  .summary-block ul{ margin:0; padding-left: 20px; }
+  .rule-table{
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px;
+    font-size: 13px;
+  }
+  .rule-table th{
+    text-align:left;
+    font-weight:600;
+    color: var(--ink-soft);
+    font-size: 11.5px;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .rule-table td{
+    padding: 9px 8px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  .rule-table tr:last-child td{ border-bottom: none; }
+  .metric-pill{
+    display:inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .metric-pill.conf{ background:#E1EEEC; color: var(--teal-deep); }
+  .metric-pill.lift{ background:#FBEEDD; color:#8A5A1E; }
+  .insight-box{
+    background: #F1F6F5;
+    border-left: 3px solid var(--teal);
+    padding: 12px 14px;
+    border-radius: 0 6px 6px 0;
+    margin: 16px 0 4px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .confirm-check{
+    display:flex;
+    align-items:flex-start;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #FBFAF7;
+  }
+  .confirm-check input{ margin-top: 3px; }
+  .confirm-check label{ font-size: 13.5px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="kicker">Instrumen Survei Akademik</div>
+    <h1>Persepsi Kebermanfaatan Hasil Penelitian: Neural Association Rule Mining untuk Deteksi Pola Pembelian Konsumen pada Data E-Commerce</h1>
+    <p>Survei ini bertujuan mengukur seberapa membantu hasil penelitian ini menurut Anda sebagai pelaku atau praktisi bisnis e-commerce. Jawaban digunakan semata-mata untuk kepentingan akademik dan tidak dipublikasikan secara individual. Waktu pengisian sekitar 5–7 menit.</p>
+  </header>
+
+  <div class="progress" id="progressBar"></div>
+  <div class="progress-label" id="progressLabel"></div>
+
+  <div class="panel">
+    <form id="surveyForm">
+
+      <!-- STEP 0: Ringkasan Hasil Penelitian -->
+      <div class="step active" data-step="0">
+        <h2 class="section-title">Sebelum Mengisi: Ringkasan Hasil Penelitian</h2>
+        <p class="section-sub">Bacalah ringkasan singkat ini dulu, supaya penilaian Anda pada bagian berikutnya lebih akurat.</p>
+
+        <div class="summary-block">
+          <h3>Apa yang diteliti?</h3>
+          <p>Penelitian ini menganalisis data transaksi e-commerce (392.692 baris transaksi dari 18.447 pelanggan dan 2.534 produk) untuk menemukan produk-produk apa saja yang cenderung dibeli bersamaan oleh pelanggan yang sama.</p>
+        </div>
+
+        <div class="summary-block">
+          <h3>Bagaimana cara kerjanya?</h3>
+          <p>Alih-alih menghitung kombinasi produk satu per satu secara manual, penelitian ini memakai model neural network bernama <em>autoencoder</em> yang "belajar" dari pola pembelian, lalu menghasilkan aturan asosiasi otomatis — misalnya, "pelanggan yang membeli produk A cenderung juga membeli produk B". Dari proses ini ditemukan 449 aturan (rules) yang valid.</p>
+        </div>
+
+        <div class="summary-block">
+          <h3>Beberapa temuan utama</h3>
+          <table class="rule-table">
+            <tr>
+              <th>Pelanggan membeli</th>
+              <th>Cenderung juga membeli</th>
+              <th>Kekuatan pola</th>
+            </tr>
+            <tr>
+              <td>Picnic Basket Wicker (ukuran besar)</td>
+              <td>Picnic Basket Wicker (ukuran kecil)</td>
+              <td><span class="metric-pill conf">65% konsisten</span></td>
+            </tr>
+            <tr>
+              <td>Set Teacup &amp; Saucer Regency</td>
+              <td>Regency Cakestand 3 Tier</td>
+              <td><span class="metric-pill conf">47–52% konsisten</span></td>
+            </tr>
+            <tr>
+              <td>Set 6 Tea Time Baking Cases</td>
+              <td>Set 12 Fairy Cake Baking Cases</td>
+              <td><span class="metric-pill conf">57% konsisten</span></td>
+            </tr>
+            <tr>
+              <td>Filigree Heart Daisy (niche)</td>
+              <td>Filigree Heart Bird (niche)</td>
+              <td><span class="metric-pill lift">sangat kuat, 115× lebih sering dari kebetulan</span></td>
+            </tr>
+          </table>
+          <p style="margin-top:-6px;">"Kekuatan pola" di atas berarti: makin tinggi persentasenya, makin sering kedua produk itu benar-benar dibeli bersamaan oleh pelanggan yang sama.</p>
+        </div>
+
+        <div class="summary-block">
+          <h3>Contoh penerapan di bisnis nyata</h3>
+          <ul>
+            <li><strong>Cross-selling:</strong> saat pelanggan menambahkan produk A ke keranjang, sistem otomatis menyarankan produk B ("Pelanggan lain yang membeli ini juga membeli…").</li>
+            <li><strong>Bundling:</strong> pasangan produk dengan pola sangat kuat (meski jarang dibeli) cocok dijadikan paket bundel khusus untuk segmen niche.</li>
+            <li><strong>Manajemen stok:</strong> produk-produk yang sering dibeli bersamaan perlu dijaga ketersediaannya secara bersamaan.</li>
+          </ul>
+        </div>
+
+        <div class="insight-box">
+          Catatan: penelitian ini mengukur pola yang <em>ditemukan</em> dari data historis, bukan mengklaim sudah terbukti meningkatkan penjualan atau konversi secara langsung — karena dampak bisnisnya belum diuji langsung di lapangan. Survei ini justru bertujuan mengumpulkan pendapat Anda soal seberapa bermanfaat temuan ini bila diterapkan.
+        </div>
+
+        <div class="confirm-check">
+          <input type="checkbox" id="confirmRead" name="confirm_read" value="Ya" required>
+          <label for="confirmRead">Saya sudah membaca ringkasan hasil penelitian di atas dan siap melanjutkan ke survei.</label>
+        </div>
+      </div>
+
+      <!-- STEP 1: Identitas -->
+      <div class="step" data-step="1">
+        <h2 class="section-title">Identitas Responden</h2>
+        <p class="section-sub">Bagian ini membantu kami memahami latar belakang responden.</p>
+
+        <div class="field">
+          <label class="q-label">Nama (opsional)</label>
+          <input type="text" name="nama" placeholder="Nama Anda">
+        </div>
+
+        <div class="field">
+          <label class="q-label">Peran/posisi Anda dalam bisnis e-commerce</label>
+          <select name="peran" required>
+            <option value="" disabled selected>Pilih salah satu</option>
+            <option>Pemilik usaha</option>
+            <option>Manajer</option>
+            <option>Digital Marketer</option>
+            <option>Staf Penjualan</option>
+            <option>Lainnya</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label class="q-label">Platform e-commerce yang Anda gunakan/kelola (bisa pilih lebih dari satu)</label>
+          <div class="checkbox-group">
+            <label class="chip"><input type="checkbox" name="platform" value="Marketplace"><span>Marketplace</span></label>
+            <label class="chip"><input type="checkbox" name="platform" value="Website toko sendiri"><span>Website toko sendiri</span></label>
+            <label class="chip"><input type="checkbox" name="platform" value="Media sosial"><span>Media sosial</span></label>
+            <label class="chip"><input type="checkbox" name="platform" value="Lainnya"><span>Lainnya</span></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="q-label">Lama pengalaman Anda di bidang bisnis/penjualan online</label>
+          <select name="pengalaman" required>
+            <option value="" disabled selected>Pilih salah satu</option>
+            <option>&lt;1 tahun</option>
+            <option>1–3 tahun</option>
+            <option>3–5 tahun</option>
+            <option>&gt;5 tahun</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STEP 2: A-C -->
+      <div class="step" data-step="2">
+        <h2 class="section-title">Pernyataan (1/2)</h2>
+        <p class="section-sub">Untuk setiap pernyataan, pilih angka 1–5 sesuai seberapa membantu hasil penelitian ini menurut Anda.</p>
+        <div id="likertGroupA"></div>
+      </div>
+
+      <!-- STEP 3: D-F -->
+      <div class="step" data-step="3">
+        <h2 class="section-title">Pernyataan (2/2)</h2>
+        <p class="section-sub">Lanjutan pernyataan. 1 = Sangat Tidak Membantu, 5 = Sangat Membantu.</p>
+        <div id="likertGroupB"></div>
+      </div>
+
+      <!-- STEP 4: Open -->
+      <div class="step" data-step="4">
+        <h2 class="section-title">Pertanyaan Terbuka</h2>
+        <p class="section-sub">Jawaban singkat dengan kata-kata Anda sendiri.</p>
+
+        <div class="field">
+          <label class="q-label">Menurut Anda, apa manfaat utama dari hasil penelitian ini (Neural Association Rules) bagi bisnis e-commerce?</label>
+          <textarea name="manfaat_utama" required></textarea>
+        </div>
+        <div class="field">
+          <label class="q-label">Apa saran Anda agar hasil penelitian ini lebih mudah diterapkan dalam praktik bisnis sehari-hari?</label>
+          <textarea name="saran_penerapan" required></textarea>
+        </div>
+        <div class="field">
+          <label class="q-label">Apakah ada kendala atau tantangan yang mungkin dihadapi dalam menerapkan hasil penelitian ini? (opsional)</label>
+          <textarea name="kendala"></textarea>
+        </div>
+      </div>
+
+      <div class="notice" id="formNotice">Mohon lengkapi bagian yang wajib diisi sebelum melanjutkan.</div>
+
+      <div class="nav-row">
+        <button type="button" class="btn-ghost" id="btnBack">Kembali</button>
+        <button type="button" class="btn-primary" id="btnNext">Lanjut</button>
+        <button type="submit" class="btn-primary" id="btnSubmit" style="display:none;">Kirim Jawaban</button>
+      </div>
+      <div class="sending-note" id="sendingNote">Mengirim jawaban…</div>
+    </form>
+
+    <div class="done-panel" id="donePanel" style="display:none;">
+      <h2>Terima kasih! 🙏</h2>
+      <p>Jawaban Anda sudah tercatat. Kontribusi Anda sangat membantu penelitian ini.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ====== GANTI URL INI setelah deploy Google Apps Script (lihat panduan) ====== */
+const SCRIPT_URL = "PASTE_URL_WEB_APP_APPS_SCRIPT_DI_SINI";
+/* ============================================================================ */
+
+const indicatorsA = [
+  { key:"Q1", group:"A. Pemahaman Pola Pembelian", text:"Hasil penelitian ini membantu saya memahami pola pembelian konsumen pada data transaksi e-commerce." },
+  { key:"Q2", group:"A. Pemahaman Pola Pembelian", text:"Hasil penelitian ini membantu saya mengetahui produk-produk yang sering dibeli secara bersamaan." },
+  { key:"Q3", group:"A. Pemahaman Pola Pembelian", text:"Hasil penelitian ini membantu saya menemukan hubungan (asosiasi) antarproduk berdasarkan data transaksi." },
+  { key:"Q4", group:"B. Manfaat untuk Strategi Cross-Selling", text:"Hasil penelitian ini membantu saya menentukan produk yang dapat direkomendasikan bersama kepada konsumen." },
+  { key:"Q5", group:"B. Manfaat untuk Strategi Cross-Selling", text:"Hasil penelitian ini membantu saya menentukan produk tambahan yang relevan untuk ditawarkan kepada konsumen." },
+  { key:"Q6", group:"B. Manfaat untuk Strategi Cross-Selling", text:"Hasil penelitian ini membantu mendukung strategi penawaran produk tambahan (cross-selling)." },
+  { key:"Q7", group:"C. Manfaat untuk Strategi Bundling", text:"Hasil penelitian ini membantu saya menentukan pasangan produk yang cocok dijadikan satu paket (bundling)." },
+  { key:"Q8", group:"C. Manfaat untuk Strategi Bundling", text:"Hasil penelitian ini membantu saya menentukan produk-produk yang memiliki hubungan pembelian kuat." },
+  { key:"Q9", group:"C. Manfaat untuk Strategi Bundling", text:"Hasil penelitian ini membantu saya menyusun strategi bundling berdasarkan data transaksi." },
+];
+
+const indicatorsB = [
+  { key:"Q10", group:"D. Pengambilan Keputusan Bisnis", text:"Hasil penelitian ini membantu saya dalam pengambilan keputusan bisnis yang berbasis data." },
+  { key:"Q11", group:"D. Pengambilan Keputusan Bisnis", text:"Hasil penelitian ini membantu saya menentukan strategi pemasaran yang lebih terarah." },
+  { key:"Q12", group:"D. Pengambilan Keputusan Bisnis", text:"Hasil penelitian ini membantu saya menentukan produk-produk yang perlu dipromosikan secara bersamaan." },
+  { key:"Q13", group:"E. Potensi Implementasi", text:"Hasil penelitian ini berpotensi digunakan sebagai dasar pengembangan sistem rekomendasi produk." },
+  { key:"Q14", group:"E. Potensi Implementasi", text:"Hasil penelitian ini berpotensi diterapkan pada bisnis e-commerce yang saya jalankan atau kelola." },
+  { key:"Q15", group:"E. Potensi Implementasi", text:"Hasil penelitian ini berpotensi dikembangkan menjadi sistem yang lebih praktis untuk kebutuhan bisnis." },
+  { key:"Q16", group:"F. Penilaian Keseluruhan", text:"Secara keseluruhan, hasil penelitian ini bermanfaat bagi bisnis e-commerce." },
+  { key:"Q17", group:"F. Penilaian Keseluruhan", text:"Hasil penelitian ini relevan dengan kebutuhan bisnis e-commerce saat ini." },
+  { key:"Q18", group:"F. Penilaian Keseluruhan", text:"Hasil penelitian ini layak dijadikan salah satu informasi pendukung dalam pengambilan keputusan bisnis." },
+];
+
+function renderLikertGroup(container, items){
+  let lastGroup = "";
+  let html = "";
+  items.forEach(item=>{
+    if(item.group !== lastGroup){
+      html += `<h3 style="font-size:14px;color:var(--teal);margin:20px 0 4px;">${item.group}</h3>`;
+      lastGroup = item.group;
+    }
+    html += `
+      <div class="likert-item">
+        <div class="likert-text"><span class="likert-num">${item.key.replace('Q','')}.</span>${item.text}</div>
+        <div class="likert-scale">
+          <span class="end-label">Sangat Tidak Membantu</span>
+          <div class="likert-opts">
+            ${[1,2,3,4,5].map(v=>`
+              <label class="likert-opt">
+                <input type="radio" name="${item.key}" value="${v}" required>
+                <span>${v}</span>
+              </label>`).join('')}
+          </div>
+          <span class="end-label right">Sangat Membantu</span>
+        </div>
+      </div>`;
+  });
+  container.innerHTML = html;
+}
+renderLikertGroup(document.getElementById('likertGroupA'), indicatorsA);
+renderLikertGroup(document.getElementById('likertGroupB'), indicatorsB);
+
+const steps = Array.from(document.querySelectorAll('.step'));
+const stepLabels = ["Ringkasan Hasil Penelitian","Identitas Responden","Pernyataan (1/2)","Pernyataan (2/2)","Pertanyaan Terbuka"];
+let current = 0;
+
+const progressBar = document.getElementById('progressBar');
+const progressLabel = document.getElementById('progressLabel');
+steps.forEach(()=>{
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  progressBar.appendChild(seg);
+});
+
+function updateProgress(){
+  document.querySelectorAll('.seg').forEach((seg,i)=>{
+    seg.classList.toggle('done', i <= current);
+  });
+  progressLabel.textContent = `Langkah ${current+1} dari ${steps.length} — ${stepLabels[current]}`;
+}
+
+function showStep(i){
+  steps.forEach((s, idx)=> s.classList.toggle('active', idx===i));
+  document.getElementById('btnBack').style.visibility = i===0 ? 'hidden' : 'visible';
+  document.getElementById('btnNext').style.display = i===steps.length-1 ? 'none' : 'inline-block';
+  document.getElementById('btnSubmit').style.display = i===steps.length-1 ? 'inline-block' : 'none';
+  document.getElementById('formNotice').classList.remove('show');
+  updateProgress();
+}
+showStep(current);
+
+function currentStepValid(){
+  const stepEl = steps[current];
+  const requiredFields = stepEl.querySelectorAll('[required]');
+  for(const f of requiredFields){
+    if(f.type === 'radio'){
+      const group = stepEl.querySelectorAll(`input[name="${f.name}"]`);
+      const checked = Array.from(group).some(r=>r.checked);
+      if(!checked) return false;
+    } else if(f.type === 'checkbox'){
+      if(!f.checked) return false;
+    } else if(!f.value.trim()){
+      return false;
+    }
+  }
+  return true;
+}
+
+document.getElementById('btnNext').addEventListener('click', ()=>{
+  if(!currentStepValid()){
+    document.getElementById('formNotice').classList.add('show');
+    return;
+  }
+  current = Math.min(current+1, steps.length-1);
+  showStep(current);
+  document.querySelector('.panel').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+document.getElementById('btnBack').addEventListener('click', ()=>{
+  current = Math.max(current-1, 0);
+  showStep(current);
+});
+
+document.getElementById('surveyForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!currentStepValid()){
+    document.getElementById('formNotice').classList.add('show');
+    return;
+  }
+
+  const form = e.target;
+  const formData = new FormData(form);
+
+  // gabungkan checkbox platform jadi satu string
+  const platforms = formData.getAll('platform');
+  formData.delete('platform');
+  formData.append('platform', platforms.join(', '));
+  formData.append('timestamp', new Date().toISOString());
+
+  if(SCRIPT_URL.includes('PASTE_URL_WEB_APP')){
+    alert('SCRIPT_URL belum diisi. Ikuti panduan untuk menghubungkan ke Google Sheets, lalu tempel URL Web App di bagian atas kode.');
+    return;
+  }
+
+  const submitBtn = document.getElementById('btnSubmit');
+  submitBtn.disabled = true;
+  document.getElementById('sendingNote').classList.add('show');
+
+  try{
+    await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+    document.getElementById('surveyForm').style.display = 'none';
+    document.getElementById('donePanel').style.display = 'block';
+    document.querySelectorAll('.progress .seg').forEach(s=>s.classList.add('done'));
+    progressLabel.textContent = 'Selesai';
+  }catch(err){
+    document.getElementById('sendingNote').classList.remove('show');
+    submitBtn.disabled = false;
+    alert('Gagal mengirim jawaban. Periksa koneksi internet Anda dan coba lagi.');
+  }
+});
+</script>
+</body>
+</html>
