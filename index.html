@@ -356,7 +356,6 @@
   <div class="panel">
     <form id="surveyForm">
 
-      <!-- STEP 0: Ringkasan Hasil Penelitian -->
       <div class="step active" data-step="0">
         <h2 class="section-title">Sebelum Mengisi: Ringkasan Hasil Penelitian</h2>
         <p class="section-sub">Bacalah ringkasan singkat ini dulu, supaya penilaian Anda pada bagian berikutnya lebih akurat.</p>
@@ -422,7 +421,6 @@
         </div>
       </div>
 
-      <!-- STEP 1: Identitas -->
       <div class="step" data-step="1">
         <h2 class="section-title">Identitas Responden</h2>
         <p class="section-sub">Bagian ini membantu kami memahami latar belakang responden.</p>
@@ -466,21 +464,18 @@
         </div>
       </div>
 
-      <!-- STEP 2: A-C -->
       <div class="step" data-step="2">
         <h2 class="section-title">Pernyataan (1/2)</h2>
         <p class="section-sub">Untuk setiap pernyataan, pilih angka 1–5 sesuai seberapa membantu hasil penelitian ini menurut Anda.</p>
         <div id="likertGroupA"></div>
       </div>
 
-      <!-- STEP 3: D-F -->
       <div class="step" data-step="3">
         <h2 class="section-title">Pernyataan (2/2)</h2>
         <p class="section-sub">Lanjutan pernyataan. 1 = Sangat Tidak Membantu, 5 = Sangat Membantu.</p>
         <div id="likertGroupB"></div>
       </div>
 
-      <!-- STEP 4: Open -->
       <div class="step" data-step="4">
         <h2 class="section-title">Pertanyaan Terbuka</h2>
         <p class="section-sub">Jawaban singkat dengan kata-kata Anda sendiri.</p>
@@ -517,12 +512,6 @@
 </div>
 
 <script>
-document.getElementById('surveyForm').addEventListener('submit', async (e)=>{
-  e.preventDefault(); // <-- Ini berfungsi mencegah reload dan menangani submit
-  if(!currentStepValid()){
-    document.getElementById('formNotice').classList.add('show');
-    return;
-  }
 /* ====== GANTI URL INI setelah deploy Google Apps Script (lihat panduan) ====== */
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHrmfqVjj4NZF2RfEZDKlAKtYy7Alf324EPKHJ1rtnr3D4Q_WZhP-_uYq3bK4R-2tioQ/exec";
 /* ============================================================================ */
@@ -651,7 +640,6 @@ document.getElementById('surveyForm').addEventListener('submit', async (e)=>{
   const form = e.target;
   const formData = new FormData(form);
 
-  // gabungkan checkbox platform jadi satu string
   const platforms = formData.getAll('platform');
   formData.delete('platform');
   formData.append('platform', platforms.join(', '));
